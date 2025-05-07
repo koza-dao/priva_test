@@ -54,7 +54,12 @@ fn main(
     assert(calcResume == resumeCommitment);
 
     // Verify application commitment correctly links job and resume
-    let app = Application { jobCommitment, resumeCommitment, applicantSecret };
+    let app = Application { 
+        jobCommitment, 
+        resumeCommitment, 
+        applicantSecret,
+        applicationCommitment 
+    };
     let calcApp = hashApplication(app);
     assert(calcApp == applicationCommitment);
 
@@ -62,7 +67,12 @@ fn main(
     matchScore = computeMatch(job, resume);
 
     // Verify approval commitment represents mutual consent
-    let approval = Approval { applicationCommitment, employerSecret, applicantSecret };
+    let approval = Approval { 
+        applicationCommitment, 
+        employerSecret, 
+        applicantSecret,
+        approvalCommitment 
+    };
     let calcApproval = hashApproval(approval);
     assert(calcApproval == approvalCommitment);
 }

@@ -218,13 +218,34 @@ class ZKPJobPlatform {
    * Create an application structure
    */
   createApplication(jobCommitment, resumeCommitment, applicantSecret) {
+    // Calculate the applicationCommitment
+    const applicationCommitment = this.calculateApplicationCommitment(
+      jobCommitment, resumeCommitment, applicantSecret
+    );
+
     return {
       jobCommitment: BigInt(jobCommitment),
       resumeCommitment: BigInt(resumeCommitment),
-      applicantSecret: BigInt(applicantSecret)
+      applicantSecret: BigInt(applicantSecret),
+      applicationCommitment: BigInt(applicationCommitment)
     };
   }
   
+  /**
+   * Calculate application commitment (helper function)
+   * This replicates the Noir hashApplication logic in JavaScript
+   */
+  calculateApplicationCommitment(jobCommitment, resumeCommitment, applicantSecret) {
+    // This is a simplified version - in a real implementation, 
+    // this would use the same hashing algorithm as the Noir circuit
+    const combinedValue = String(jobCommitment) + String(resumeCommitment) + String(applicantSecret);
+    return BigInt('0x' + Array.from(
+      new Uint8Array(
+        new TextEncoder().encode(combinedValue)
+      )
+    ).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 64));
+  }
+
   /**
    * Generate an application proof with match score
    */
@@ -294,13 +315,34 @@ class ZKPJobPlatform {
    * Create an approval structure
    */
   createApproval(applicationCommitment, employerSecret, applicantSecret) {
+    // Calculate the approvalCommitment
+    const approvalCommitment = this.calculateApprovalCommitment(
+      applicationCommitment, employerSecret, applicantSecret
+    );
+    
     return {
       applicationCommitment: BigInt(applicationCommitment),
       employerSecret: BigInt(employerSecret),
-      applicantSecret: BigInt(applicantSecret)
+      applicantSecret: BigInt(applicantSecret),
+      approvalCommitment: BigInt(approvalCommitment)
     };
   }
   
+  /**
+   * Calculate approval commitment (helper function)
+   * This replicates the Noir hashApproval logic in JavaScript
+   */
+  calculateApprovalCommitment(applicationCommitment, employerSecret, applicantSecret) {
+    // This is a simplified version - in a real implementation, 
+    // this would use the same hashing algorithm as the Noir circuit
+    const combinedValue = String(applicationCommitment) + String(employerSecret) + String(applicantSecret);
+    return BigInt('0x' + Array.from(
+      new Uint8Array(
+        new TextEncoder().encode(combinedValue)
+      )
+    ).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 64));
+  }
+
   /**
    * Generate an approval proof
    */

@@ -27,7 +27,7 @@ struct Resume {
  *      correlation attacks
  */
 fn hashResume(resume: Resume, secret: Field) -> Field {
-    let mut input: [Field; 343] = [0; 343];
+    let mut input: [Field; 354] = [0; 354];
     input[0] = secret;
     for i in 0..32 {
         input[i + 1] = resume.name[i];
@@ -37,6 +37,6 @@ fn hashResume(resume: Resume, secret: Field) -> Field {
             input[33 + i*32 + j] = resume.skills[i][j];
         }
     }
-    input[333] = resume.experienceYears;
+    input[353] = resume.experienceYears;
     pedersen_hash(input)
 }

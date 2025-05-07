@@ -8,6 +8,7 @@ import "./MVPVerifier.sol";
  * @notice This contract manages the entire job application flow while preserving privacy
  * @author MVP Project Team
  */
+ 
 contract MVPBoard is MVPVerifier {
     /**
      * @dev Emitted when a new job posting is published

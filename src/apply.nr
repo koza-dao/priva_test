@@ -6,6 +6,7 @@ use std::hash::pedersen_hash;
  * @field jobCommitment - The hash commitment of the job posting being applied to
  * @field resumeCommitment - The hash commitment of the candidate's resume
  * @field applicantSecret - A secret field known only to the applicant for this specific application
+ * @field applicationCommitment - The expected commitment for this application (for verification)
  * @dev This structure preserves privacy by only referencing commitments rather than 
  *      actual job or resume data
  */
@@ -13,6 +14,7 @@ struct Application {
     jobCommitment: Field,
     resumeCommitment: Field,
     applicantSecret: Field,
+    applicationCommitment: Field,
 }
 
 /**
@@ -42,5 +44,5 @@ fn hashApplication(app: Application) -> Field {
  */
 fn apply(app: Application) {
     let calc = hashApplication(app);
-    assert(calc == app.jobCommitment, "Invalid application commitment");
+    assert(calc == app.applicationCommitment, "Invalid application commitment");
 }

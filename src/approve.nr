@@ -6,6 +6,7 @@ use std::hash::pedersen_hash;
  * @field applicationCommitment - The hash commitment of the original application
  * @field employerSecret - A secret field known only to the employer for this approval
  * @field applicantSecret - A secret field known only to the applicant for this approval
+ * @field approvalCommitment - The expected commitment for this approval (for verification)
  * @dev This structure represents the final stage of the job application process where
  *      both parties agree to proceed, enabling the sharing of actual contact information
  */
@@ -13,6 +14,7 @@ struct Approval {
     applicationCommitment: Field,
     employerSecret: Field,
     applicantSecret: Field,
+    approvalCommitment: Field,
 }
 
 /**
@@ -42,5 +44,5 @@ fn hashApproval(a: Approval) -> Field {
  */
 fn approve(a: Approval) {
     let calc = hashApproval(a);
-    assert(calc == a.applicationCommitment, "Invalid approval commitment");
+    assert(calc == a.approvalCommitment, "Invalid approval commitment");
 }
