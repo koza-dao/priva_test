@@ -1,4 +1,5 @@
-use std::hash::pedersen_hash;
+import { aztec } from "@aztec/noir";
+use aztec::hash::pedersen_hash;
 
 /**
  * @struct JobPost
@@ -45,4 +46,11 @@ fn hashJob(job: JobPost, secret: Field) -> Field {
     input[674] = job.salary;
     input[675] = job.minLevel;
     pedersen_hash(input)
+}
+
+#[aztec::private]
+fn publish_job(job: JobPost, secret: Field) -> Field {
+    let commitment = hashJob(job, secret);
+    aztec::emit("JobPublished", commitment);
+    commitment
 }

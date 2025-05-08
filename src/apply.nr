@@ -1,4 +1,5 @@
-use std::hash::pedersen_hash;
+import { aztec } from "@aztec/noir";
+use aztec::hash::pedersen_hash;
 
 /**
  * @struct Application
@@ -45,4 +46,23 @@ fn hashApplication(app: Application) -> Field {
 fn apply(app: Application) {
     let calc = hashApplication(app);
     assert(calc == app.applicationCommitment, "Invalid application commitment");
+}
+
+#[aztec::private]
+fn create_application(
+    jobCommitment: Field, 
+    resumeCommitment: Field, 
+    applicantSecret: Field,
+    matchScore: Field
+) -> Field {
+    let app = Application { 
+        jobCommitment, 
+        resumeCommitment, 
+        applicantSecret,
+        applicationCommitment: Field::default() // Will be calculated
+    };
+    
+    let commitment = hashApplication(app);
+    aztec::emit("ApplicationCreated", commitment, matchScore);
+    commitment
 }

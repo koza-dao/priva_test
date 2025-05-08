@@ -2,6 +2,7 @@
  * @file match.nr
  * @description Implements the skills matching algorithm between job postings and resumes
  */
+import { aztec } from "@aztec/noir";
 
 /**
  * @struct JobPost
@@ -41,5 +42,12 @@ fn computeMatch(job: JobPost, resume: Resume) -> Field {
             }
         }
     }
+    score
+}
+
+#[aztec::private]
+fn compute_match_score(job: JobPost, resume: Resume) -> Field {
+    let score = computeMatch(job, resume);
+    aztec::emit("MatchScoreComputed", score);
     score
 }

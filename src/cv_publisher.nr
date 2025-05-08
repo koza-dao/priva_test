@@ -1,4 +1,5 @@
-use std::hash::pedersen_hash;
+import { aztec } from "@aztec/noir";
+use aztec::hash::pedersen_hash;
 
 /**
  * @struct Resume
@@ -39,4 +40,11 @@ fn hashResume(resume: Resume, secret: Field) -> Field {
     }
     input[353] = resume.experienceYears;
     pedersen_hash(input)
+}
+
+#[aztec::private]
+fn submit_resume(resume: Resume, secret: Field) -> Field {
+    let commitment = hashResume(resume, secret);
+    aztec::emit("ResumeSubmitted", commitment);
+    commitment
 }

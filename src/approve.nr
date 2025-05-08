@@ -1,4 +1,5 @@
-use std::hash::pedersen_hash;
+import { aztec } from "@aztec/noir";
+use aztec::hash::pedersen_hash;
 
 /**
  * @struct Approval
@@ -45,4 +46,22 @@ fn hashApproval(a: Approval) -> Field {
 fn approve(a: Approval) {
     let calc = hashApproval(a);
     assert(calc == a.approvalCommitment, "Invalid approval commitment");
+}
+
+#[aztec::private]
+fn create_approval(
+    applicationCommitment: Field, 
+    employerSecret: Field, 
+    applicantSecret: Field
+) -> Field {
+    let a = Approval { 
+        applicationCommitment, 
+        employerSecret, 
+        applicantSecret,
+        approvalCommitment: Field::default() // Will be calculated
+    };
+    
+    let commitment = hashApproval(a);
+    aztec::emit("ApprovalDone", commitment);
+    commitment
 }
