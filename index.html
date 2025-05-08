@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZKP Job Platform - Aztec Demo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #1a237e;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+        }
+        .section h2 {
+            margin-top: 0;
+            color: #303f9f;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"],
+        input[type="number"],
+        textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #3f51b5;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #303f9f;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            display: none;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 15px;
+            background-color: #e0e0e0;
+            border: none;
+            cursor: pointer;
+            margin-right: 5px;
+            border-radius: 4px 4px 0 0;
+        }
+        .tab.active {
+            background-color: #3f51b5;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        #connection-status {
+            padding: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+            border-radius: 4px;
+        }
+        .connected {
+            background-color: #c8e6c9;
+            color: #2e7d32;
+        }
+        .disconnected {
+            background-color: #ffcdd2;
+            color: #c62828;
+        }
+        .note {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ZKP Job Platform on Aztec</h1>
+        
+        <div id="connection-status" class="disconnected">
+            Not connected to Aztec
+        </div>
+
+        <div class="section">
+            <h2>Connect to Aztec</h2>
+            <div class="form-group">
+                <label for="private-key">Private Key (optional):</label>
+                <input type="text" id="private-key" placeholder="Leave empty to generate a new key">
+            </div>
+            <div class="form-group">
+                <label for="contract-address">Contract Address (optional):</label>
+                <input type="text" id="contract-address" placeholder="Leave empty to deploy a new contract">
+            </div>
+            <button id="connect-button">Connect & Initialize</button>
+            <div class="note">For demo purposes without Aztec SDK, the connection will be simulated.</div>
+            <div id="connect-result" class="result"></div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="employer">Employer</button>
+            <button class="tab" data-tab="job-seeker">Job Seeker</button>
+            <button class="tab" data-tab="applications">Applications</button>
+        </div>
+
+        <div id="employer" class="tab-content active">
+            <div class="section">
+                <h2>Post a Job</h2>
+                <div class="form-group">
+                    <label for="job-title">Job Title:</label>
+                    <input type="text" id="job-title" placeholder="e.g., Senior Software Engineer">
+                </div>
+                <div class="form-group">
+                    <label for="company">Company:</label>
+                    <input type="text" id="company" placeholder="e.g., Tech Solutions Inc.">
+                </div>
+                <div class="form-group">
+                    <label for="location">Location:</label>
+                    <input type="text" id="location" placeholder="e.g., Remote, New York, etc.">
+                </div>
+                <div class="form-group">
+                    <label for="requirements">Requirements (comma separated):</label>
+                    <textarea id="requirements" placeholder="e.g., JavaScript, React, Node.js"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="salary">Salary:</label>
+                    <input type="number" id="salary" placeholder="e.g., 100000">
+                </div>
+                <div class="form-group">
+                    <label for="min-level">Minimum Level (years of experience):</label>
+                    <input type="number" id="min-level" placeholder="e.g., 3">
+                </div>
+                <div class="form-group">
+                    <label for="job-secret">Secret Code:</label>
+                    <input type="text" id="job-secret" placeholder="A secret code for this job post">
+                </div>
+                <button id="post-job-button">Post Job</button>
+                <div id="post-job-result" class="result"></div>
+            </div>
+        </div>
+
+        <div id="job-seeker" class="tab-content">
+            <div class="section">
+                <h2>Submit Resume/CV</h2>
+                <div class="form-group">
+                    <label for="name">Full Name:</label>
+                    <input type="text" id="name" placeholder="e.g., John Doe">
+                </div>
+                <div class="form-group">
+                    <label for="skills">Skills (comma separated):</label>
+                    <textarea id="skills" placeholder="e.g., JavaScript, React, Node.js"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="experience">Years of Experience:</label>
+                    <input type="number" id="experience" placeholder="e.g., 5">
+                </div>
+                <div class="form-group">
+                    <label for="resume-secret">Secret Code:</label>
+                    <input type="text" id="resume-secret" placeholder="A secret code for your resume">
+                </div>
+                <button id="submit-resume-button">Submit Resume</button>
+                <div id="submit-resume-result" class="result"></div>
+            </div>
+        </div>
+
+        <div id="applications" class="tab-content">
+            <div class="section">
+                <h2>Apply for a Job</h2>
+                <div class="form-group">
+                    <label for="job-commitment">Job Commitment:</label>
+                    <input type="text" id="job-commitment" placeholder="The job commitment hash">
+                </div>
+                <div class="form-group">
+                    <label for="resume-commitment">Resume Commitment:</label>
+                    <input type="text" id="resume-commitment" placeholder="Your resume commitment hash">
+                </div>
+                <div class="form-group">
+                    <label for="applicant-secret">Applicant Secret:</label>
+                    <input type="text" id="applicant-secret" placeholder="A secret for this application">
+                </div>
+                <button id="apply-button">Apply</button>
+                <div id="apply-result" class="result"></div>
+            </div>
+
+            <div class="section">
+                <h2>Approve Application</h2>
+                <div class="form-group">
+                    <label for="application-commitment">Application Commitment:</label>
+                    <input type="text" id="application-commitment" placeholder="The application commitment hash">
+                </div>
+                <div class="form-group">
+                    <label for="employer-secret">Employer Secret:</label>
+                    <input type="text" id="employer-secret" placeholder="Employer's secret">
+                </div>
+                <div class="form-group">
+                    <label for="approval-applicant-secret">Applicant Secret:</label>
+                    <input type="text" id="approval-applicant-secret" placeholder="Applicant's secret">
+                </div>
+                <button id="approve-button">Approve</button>
+                <div id="approve-result" class="result"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- In production, use a proper bundler instead of this approach -->
+    <script>
+        // Mock implementation for demo purposes without Aztec SDK
+        window.zkpPlatform = {
+            connectToAztec: async function(privateKey, contractAddress) {
+                return {
+                    success: true,
+                    wallet: '0x1234567890abcdef',
+                    contractAddress: contractAddress || 'deployed-contract-address-67890'
+                };
+            },
+            publishJob: async function(title, company, location, requirements, salary, minLevel, secret) {
+                const jobCommitment = 'job-commitment-' + Math.random().toString(36).substring(2, 10);
+                return {
+                    success: true,
+                    jobCommitment: jobCommitment,
+                    txHash: '0x' + Math.random().toString(36).substring(2, 10)
+                };
+            },
+            submitResume: async function(name, skills, experienceYears, secret) {
+                const resumeCommitment = 'resume-commitment-' + Math.random().toString(36).substring(2, 10);
+                return {
+                    success: true,
+                    resumeCommitment: resumeCommitment,
+                    txHash: '0x' + Math.random().toString(36).substring(2, 10)
+                };
+            },
+            applyToJob: async function(jobCommitment, resumeCommitment, applicantSecret) {
+                const applicationCommitment = 'application-commitment-' + Math.random().toString(36).substring(2, 10);
+                const matchScore = Math.floor(Math.random() * 100);
+                return {
+                    success: true,
+                    applicationCommitment: applicationCommitment,
+                    matchScore: matchScore,
+                    txHash: '0x' + Math.random().toString(36).substring(2, 10)
+                };
+            },
+            approveApplication: async function(applicationCommitment, employerSecret, applicantSecret) {
+                const approvalCommitment = 'approval-commitment-' + Math.random().toString(36).substring(2, 10);
+                return {
+                    success: true,
+                    approvalCommitment: approvalCommitment,
+                    txHash: '0x' + Math.random().toString(36).substring(2, 10)
+                };
+            },
+            subscribeToEvents: function() {},
+            unsubscribeFromEvents: function() {}
+        };
+
+        // UI logic
+        document.addEventListener('DOMContentLoaded', function() {
+            let platform = null;
+            let jobCommitment = null;
+            let resumeCommitment = null;
+            let applicationCommitment = null;
+            
+            // Tab switching
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Remove active class from all tabs and contents
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    
+                    // Add active class to clicked tab and corresponding content
+                    tab.classList.add('active');
+                    const tabId = tab.getAttribute('data-tab');
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+            
+            // Connect button
+            document.getElementById('connect-button').addEventListener('click', async () => {
+                const resultElement = document.getElementById('connect-result');
+                resultElement.style.display = 'block';
+                resultElement.textContent = 'Connecting to Aztec...';
+                
+                try {
+                    const privateKey = document.getElementById('private-key').value;
+                    const contractAddress = document.getElementById('contract-address').value;
+                    
+                    const result = await window.zkpPlatform.connectToAztec(privateKey, contractAddress);
+                    
+                    if (result.success) {
+                        // Update connection status
+                        const statusElement = document.getElementById('connection-status');
+                        statusElement.className = 'connected';
+                        statusElement.textContent = `Connected to Aztec (Wallet: ${result.wallet.substring(0, 8)}...)`;
+                        
+                        resultElement.textContent = `
+Connected successfully!
+${privateKey ? 'Using provided private key' : 'Generated new private key'}
+${contractAddress ? 'Connected to existing contract' : 'Deployed new contract at: ' + result.contractAddress}
+                        `;
+                    } else {
+                        resultElement.textContent = `Error: ${result.error}`;
+                    }
+                } catch (error) {
+                    resultElement.textContent = `Error: ${error.message}`;
+                }
+            });
+            
+            // Post Job button
+            document.getElementById('post-job-button').addEventListener('click', async () => {
+                const resultElement = document.getElementById('post-job-result');
+                resultElement.style.display = 'block';
+                resultElement.textContent = 'Publishing job...';
+                
+                try {
+                    // Get form values
+                    const title = document.getElementById('job-title').value;
+                    const company = document.getElementById('company').value;
+                    const location = document.getElementById('location').value;
+                    const requirements = document.getElementById('requirements').value;
+                    const salary = document.getElementById('salary').value;
+                    const minLevel = document.getElementById('min-level').value;
+                    const secret = document.getElementById('job-secret').value;
+                    
+                    if (!title || !company || !requirements || !salary || !minLevel || !secret) {
+                        throw new Error('Please fill in all required fields');
+                    }
+                    
+                    const result = await window.zkpPlatform.publishJob(
+                        title, company, location, requirements, salary, minLevel, secret
+                    );
+                    
+                    if (result.success) {
+                        jobCommitment = result.jobCommitment;
+                        
+                        resultElement.textContent = `
+Job published successfully!
+Job Title: ${title}
+Company: ${company}
+Job Commitment: ${jobCommitment}
+Transaction Hash: ${result.txHash}
+                        `;
+                    } else {
+                        resultElement.textContent = `Error: ${result.error}`;
+                    }
+                } catch (error) {
+                    resultElement.textContent = `Error: ${error.message}`;
+                }
+            });
+            
+            // Submit Resume button
+            document.getElementById('submit-resume-button').addEventListener('click', async () => {
+                const resultElement = document.getElementById('submit-resume-result');
+                resultElement.style.display = 'block';
+                resultElement.textContent = 'Submitting resume...';
+                
+                try {
+                    // Get form values
+                    const name = document.getElementById('name').value;
+                    const skills = document.getElementById('skills').value;
+                    const experience = document.getElementById('experience').value;
+                    const secret = document.getElementById('resume-secret').value;
+                    
+                    if (!name || !skills || !experience || !secret) {
+                        throw new Error('Please fill in all required fields');
+                    }
+                    
+                    const result = await window.zkpPlatform.submitResume(
+                        name, skills, experience, secret
+                    );
+                    
+                    if (result.success) {
+                        resumeCommitment = result.resumeCommitment;
+                        
+                        resultElement.textContent = `
+Resume submitted successfully!
+Name: ${name}
+Resume Commitment: ${resumeCommitment}
+Transaction Hash: ${result.txHash}
+                        `;
+                    } else {
+                        resultElement.textContent = `Error: ${result.error}`;
+                    }
+                } catch (error) {
+                    resultElement.textContent = `Error: ${error.message}`;
+                }
+            });
+            
+            // Apply button
+            document.getElementById('apply-button').addEventListener('click', async () => {
+                const resultElement = document.getElementById('apply-result');
+                resultElement.style.display = 'block';
+                resultElement.textContent = 'Applying to job...';
+                
+                try {
+                    // Get form values
+                    const jobCommitmentValue = document.getElementById('job-commitment').value || jobCommitment;
+                    const resumeCommitmentValue = document.getElementById('resume-commitment').value || resumeCommitment;
+                    const applicantSecret = document.getElementById('applicant-secret').value;
+                    
+                    if (!jobCommitmentValue || !resumeCommitmentValue || !applicantSecret) {
+                        throw new Error('Please fill in all required fields');
+                    }
+                    
+                    const result = await window.zkpPlatform.applyToJob(
+                        jobCommitmentValue, resumeCommitmentValue, applicantSecret
+                    );
+                    
+                    if (result.success) {
+                        applicationCommitment = result.applicationCommitment;
+                        
+                        resultElement.textContent = `
+Application submitted successfully!
+Job Commitment: ${jobCommitmentValue}
+Resume Commitment: ${resumeCommitmentValue}
+Application Commitment: ${applicationCommitment}
+Match Score: ${result.matchScore}/100
+Transaction Hash: ${result.txHash}
+                        `;
+                    } else {
+                        resultElement.textContent = `Error: ${result.error}`;
+                    }
+                } catch (error) {
+                    resultElement.textContent = `Error: ${error.message}`;
+                }
+            });
+            
+            // Approve button
+            document.getElementById('approve-button').addEventListener('click', async () => {
+                const resultElement = document.getElementById('approve-result');
+                resultElement.style.display = 'block';
+                resultElement.textContent = 'Approving application...';
+                
+                try {
+                    // Get form values
+                    const applicationCommitmentValue = document.getElementById('application-commitment').value || applicationCommitment;
+                    const employerSecret = document.getElementById('employer-secret').value;
+                    const applicantSecret = document.getElementById('approval-applicant-secret').value;
+                    
+                    if (!applicationCommitmentValue || !employerSecret || !applicantSecret) {
+                        throw new Error('Please fill in all required fields');
+                    }
+                    
+                    const result = await window.zkpPlatform.approveApplication(
+                        applicationCommitmentValue, employerSecret, applicantSecret
+                    );
+                    
+                    if (result.success) {
+                        resultElement.textContent = `
+Application approved successfully!
+Application Commitment: ${applicationCommitmentValue}
+Approval Commitment: ${result.approvalCommitment}
+Transaction Hash: ${result.txHash}
+                        `;
+                    } else {
+                        resultElement.textContent = `Error: ${result.error}`;
+                    }
+                } catch (error) {
+                    resultElement.textContent = `Error: ${error.message}`;
+                }
+            });
+        });
+    </script>
+    
+    <!-- In a real implementation, you would use a bundler (like webpack) to include app.js -->
+    <!-- For demo purposes, we use a mock implementation above -->
+    <!-- <script type="module" src="app.js"></script> -->
+</body>
+</html> 

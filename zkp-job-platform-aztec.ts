@@ -16,20 +16,38 @@ import {
 } from '@aztec/sdk';
 import { MVPBoard, JobPostNote, ResumeNote, ApplicationNote, ApprovalNote } from './contracts/MVPBoard';
 
+interface ZKPJobPlatformConfig {
+  provider?: any;
+  privateKey?: string;
+  mvpBoardAddress?: string;
+}
+
+interface EventCallbacks {
+  onJobPublished?: (jobCommitment: string) => void;
+  onResumeSubmitted?: (resumeCommitment: string) => void;
+  onApplicationCreated?: (applicationCommitment: string, matchScore: number) => void;
+  onApprovalCreated?: (approvalCommitment: string) => void;
+}
+
 class ZKPJobPlatformAztec {
-  constructor(config) {
+  private provider?: any;
+  private privateKey?: string;
+  private mvpBoardAddress?: string;
+  private sdk: AztecSdk | null = null;
+  private wallet: AccountWallet | null = null;
+  private mvpBoard: any | null = null;
+  private eventSubscriptions: any[] = [];
+
+  constructor(config: ZKPJobPlatformConfig) {
     this.provider = config.provider;
     this.privateKey = config.privateKey;
     this.mvpBoardAddress = config.mvpBoardAddress;
-    this.sdk = null;
-    this.wallet = null;
-    this.mvpBoard = null;
   }
 
   /**
    * Initialize the Aztec SDK, wallet and contract
    */
-  async initialize() {
+  async initialize(): Promise<void> {
     // Create and start the SDK
     this.sdk = await createAztecSdk({
       serverUrl: 'https://api.aztec.network/aztec-connect-testnet/falafel', // Use testnet
@@ -60,7 +78,7 @@ class ZKPJobPlatformAztec {
   /**
    * Deploy a new MVPBoard contract
    */
-  async deployContract() {
+  async deployContract(): Promise<string> {
     if (!this.sdk || !this.wallet) {
       throw new Error('SDK and wallet must be initialized before deploying');
     }
@@ -79,7 +97,7 @@ class ZKPJobPlatformAztec {
   /**
    * Convert string to Field array (for input to Aztec)
    */
-  stringToFieldArray(str, length = 32) {
+  stringToFieldArray(str: string, length: number = 32): Fr[] {
     const result = new Array(length).fill(Fr.ZERO);
     for (let i = 0; i < Math.min(str.length, length); i++) {
       result[i] = new Fr(str.charCodeAt(i));
@@ -90,7 +108,7 @@ class ZKPJobPlatformAztec {
   /**
    * Convert Field array to string (for display)
    */
-  fieldArrayToString(fieldArray) {
+  fieldArrayToString(fieldArray: Fr[]): string {
     return fieldArray
       .map(field => String.fromCharCode(parseInt(field.toString())))
       .join('')
@@ -104,7 +122,15 @@ class ZKPJobPlatformAztec {
   /**
    * Create a job post structure for Aztec
    */
-  createJobPost(title, company, location, requirements, salary, minLevel, secret) {
+  createJobPost(
+    title: string, 
+    company: string, 
+    location: string, 
+    requirements: string[], 
+    salary: number, 
+    minLevel: number, 
+    secret: string
+  ): JobPostNote {
     return new JobPostNote(
       this.stringToFieldArray(title),
       this.stringToFieldArray(company),
@@ -121,7 +147,15 @@ class ZKPJobPlatformAztec {
   /**
    * Publish a job on Aztec
    */
-  async publishJob(title, company, location, requirements, salary, minLevel, secret) {
+  async publishJob(
+    title: string, 
+    company: string, 
+    location: string, 
+    requirements: string[], 
+    salary: number, 
+    minLevel: number, 
+    secret: string
+  ): Promise<{txHash: string, jobCommitment: string}> {
     if (!this.mvpBoard) {
       throw new Error('Contract not initialized');
     }
@@ -136,7 +170,7 @@ class ZKPJobPlatformAztec {
       .wait();
     
     // Extract job commitment from logs
-    const event = tx.events.find(e => e.name === 'JobPublished');
+    const event = tx.events.find((e: any) => e.name === 'JobPublished');
     const jobCommitment = event.args[0];
     
     console.log('Job published successfully');
@@ -153,7 +187,12 @@ class ZKPJobPlatformAztec {
   /**
    * Create a resume structure for Aztec
    */
-  createResume(name, skills, experienceYears, secret) {
+  createResume(
+    name: string, 
+    skills: string[], 
+    experienceYears: number, 
+    secret: string
+  ): ResumeNote {
     return new ResumeNote(
       this.stringToFieldArray(name),
       skills.map(skill => this.stringToFieldArray(skill)).concat(
@@ -167,7 +206,12 @@ class ZKPJobPlatformAztec {
   /**
    * Submit a resume on Aztec
    */
-  async submitResume(name, skills, experienceYears, secret) {
+  async submitResume(
+    name: string, 
+    skills: string[], 
+    experienceYears: number, 
+    secret: string
+  ): Promise<{txHash: string, resumeCommitment: string}> {
     if (!this.mvpBoard) {
       throw new Error('Contract not initialized');
     }
@@ -182,7 +226,7 @@ class ZKPJobPlatformAztec {
       .wait();
     
     // Extract resume commitment from logs
-    const event = tx.events.find(e => e.name === 'ResumeSubmitted');
+    const event = tx.events.find((e: any) => e.name === 'ResumeSubmitted');
     const resumeCommitment = event.args[0];
     
     console.log('Resume submitted successfully');
@@ -200,12 +244,12 @@ class ZKPJobPlatformAztec {
    * Apply to a job on Aztec
    */
   async applyToJob(
-    job, // JobPostNote or job details object
-    resume, // ResumeNote or resume details object
-    jobCommitment,
-    resumeCommitment,
-    applicantSecret
-  ) {
+    job: JobPostNote | any, // JobPostNote or job details object
+    resume: ResumeNote | any, // ResumeNote or resume details object
+    jobCommitment: string,
+    resumeCommitment: string,
+    applicantSecret: string
+  ): Promise<{txHash: string, applicationCommitment: string, matchScore: number}> {
     if (!this.mvpBoard) {
       throw new Error('Contract not initialized');
     }
@@ -247,26 +291,27 @@ class ZKPJobPlatformAztec {
       .wait();
     
     // Extract application commitment and match score from logs
-    const event = tx.events.find(e => e.name === 'ApplicationCreated');
+    const event = tx.events.find((e: any) => e.name === 'ApplicationCreated');
     const applicationCommitment = event.args[0];
-    const matchScore = event.args[1];
+    const matchScore = parseInt(event.args[1].toString());
     
     console.log('Application submitted successfully');
+    console.log('Match score:', matchScore);
     return {
       txHash: tx.hash,
       applicationCommitment: applicationCommitment.toString(),
-      matchScore: matchScore.toString()
+      matchScore
     };
   }
 
-  /*********************
-   * APPROVAL METHODS *
-   *********************/
-  
   /**
-   * Approve an application on Aztec
+   * Approve application (mutual agreement)
    */
-  async approve(applicationCommitment, employerSecret, applicantSecret) {
+  async approve(
+    applicationCommitment: string, 
+    employerSecret: string, 
+    applicantSecret: string
+  ): Promise<{txHash: string, approvalCommitment: string}> {
     if (!this.mvpBoard) {
       throw new Error('Contract not initialized');
     }
@@ -283,91 +328,80 @@ class ZKPJobPlatformAztec {
       .wait();
     
     // Extract approval commitment from logs
-    const event = tx.events.find(e => e.name === 'ApprovalDone');
+    const event = tx.events.find((e: any) => e.name === 'ApprovalCreated');
     const approvalCommitment = event.args[0];
     
-    console.log('Approval submitted successfully');
+    console.log('Approval created successfully');
     return {
       txHash: tx.hash,
       approvalCommitment: approvalCommitment.toString()
     };
   }
 
-  /*******************
-   * HELPER METHODS *
-   *******************/
-  
   /**
    * Subscribe to contract events
    */
-  subscribeToEvents(callbacks) {
-    if (!this.mvpBoard) {
-      throw new Error('Contract not initialized');
+  subscribeToEvents(callbacks: EventCallbacks): void {
+    if (!this.sdk || !this.mvpBoard) {
+      throw new Error('SDK and contract must be initialized before subscribing to events');
     }
-    
-    // JobPublished events
+
     if (callbacks.onJobPublished) {
-      this.mvpBoard.events.JobPublished.subscribe(event => {
-        callbacks.onJobPublished({
-          jobCommitment: event.args[0].toString(),
-          txHash: event.txHash
+      const jobSub = this.mvpBoard.events
+        .JobPublished
+        .subscribe((event: any) => {
+          const jobCommitment = event.args[0].toString();
+          callbacks.onJobPublished?.(jobCommitment);
         });
-      });
+      this.eventSubscriptions.push(jobSub);
     }
-    
-    // ResumeSubmitted events
+
     if (callbacks.onResumeSubmitted) {
-      this.mvpBoard.events.ResumeSubmitted.subscribe(event => {
-        callbacks.onResumeSubmitted({
-          resumeCommitment: event.args[0].toString(),
-          txHash: event.txHash
+      const resumeSub = this.mvpBoard.events
+        .ResumeSubmitted
+        .subscribe((event: any) => {
+          const resumeCommitment = event.args[0].toString();
+          callbacks.onResumeSubmitted?.(resumeCommitment);
         });
-      });
+      this.eventSubscriptions.push(resumeSub);
     }
-    
-    // ApplicationCreated events
+
     if (callbacks.onApplicationCreated) {
-      this.mvpBoard.events.ApplicationCreated.subscribe(event => {
-        callbacks.onApplicationCreated({
-          applicationCommitment: event.args[0].toString(),
-          matchScore: event.args[1].toString(),
-          txHash: event.txHash
+      const appSub = this.mvpBoard.events
+        .ApplicationCreated
+        .subscribe((event: any) => {
+          const applicationCommitment = event.args[0].toString();
+          const matchScore = parseInt(event.args[1].toString());
+          callbacks.onApplicationCreated?.(applicationCommitment, matchScore);
         });
-      });
+      this.eventSubscriptions.push(appSub);
     }
-    
-    // ApprovalDone events
-    if (callbacks.onApprovalDone) {
-      this.mvpBoard.events.ApprovalDone.subscribe(event => {
-        callbacks.onApprovalDone({
-          approvalCommitment: event.args[0].toString(),
-          txHash: event.txHash
+
+    if (callbacks.onApprovalCreated) {
+      const approvalSub = this.mvpBoard.events
+        .ApprovalCreated
+        .subscribe((event: any) => {
+          const approvalCommitment = event.args[0].toString();
+          callbacks.onApprovalCreated?.(approvalCommitment);
         });
-      });
+      this.eventSubscriptions.push(approvalSub);
     }
-    
-    console.log('Subscribed to contract events');
   }
-  
+
   /**
-   * Unsubscribe from all contract events
+   * Unsubscribe from all events
    */
-  unsubscribeFromEvents() {
-    if (!this.mvpBoard) {
-      return;
+  unsubscribeFromEvents(): void {
+    for (const subscription of this.eventSubscriptions) {
+      subscription.unsubscribe();
     }
     
-    this.mvpBoard.events.JobPublished.unsubscribeAll();
-    this.mvpBoard.events.ResumeSubmitted.unsubscribeAll();
-    this.mvpBoard.events.ApplicationCreated.unsubscribeAll();
-    this.mvpBoard.events.ApprovalDone.unsubscribeAll();
-    
-    console.log('Unsubscribed from all contract events');
+    this.eventSubscriptions = [];
+    console.log('Unsubscribed from all events');
   }
 }
 
-// Example usage
-async function initializeZKPPlatformAztec(config) {
+async function initializeZKPPlatformAztec(config: ZKPJobPlatformConfig): Promise<ZKPJobPlatformAztec> {
   try {
     const platform = new ZKPJobPlatformAztec(config);
     await platform.initialize();
@@ -386,5 +420,7 @@ async function initializeZKPPlatformAztec(config) {
 // Export the class and initialization function
 export {
   ZKPJobPlatformAztec,
-  initializeZKPPlatformAztec
+  initializeZKPPlatformAztec,
+  ZKPJobPlatformConfig,
+  EventCallbacks
 }; 
