@@ -1,0 +1,173 @@
+{
+  "transpiled": true,
+  "noir_version": "1.0.0-beta.4+0000000000000000000000000000000000000000",
+  "name": "MVPBoard",
+  "functions": [
+    {
+      "name": "publish_job",
+      "is_unconstrained": false,
+      "custom_attributes": [],
+      "abi": {
+        "parameters": [
+          {
+            "name": "title",
+            "type": {
+              "kind": "field"
+            },
+            "visibility": "private"
+          },
+          {
+            "name": "company",
+            "type": {
+              "kind": "field"
+            },
+            "visibility": "private"
+          },
+          {
+            "name": "requirements",
+            "type": {
+              "kind": "field"
+            },
+            "visibility": "private"
+          }
+        ],
+        "return_type": {
+          "abi_type": {
+            "kind": "field"
+          },
+          "visibility": "public"
+        },
+        "error_types": {}
+      },
+      "bytecode": "H4sIAAAAAAAA/62R3QqAMAhGW/VAOrXpXa/SaL3/I/S3wViX7YB8KHJAdMPLdJUbvsw515wEC3MKPiHhBt6iCrDERVFRVHavRElZg0ULYMiU8BCjA156ulxH11i54B849XM9N87Vjwr3fGz6dqdwApReEavkAQAA",
+      "debug_symbols": "XYxLCoAwDAXvkrUn8Coi0k9aAqEpsRWk9O5+cCFdzhveNPBoa9woBdlhXhqwOFNI0k2tT2CVmCluw3wYJWMZPww1uZ8tZ8bhn1Uc+qr4lF7X134B",
+      "brillig_names": [],
+      "verification_key": "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\nPa5YgJ+q7saoanj0s7xh8Z1ucGk1m79H5/kH"
+    },
+    {
+      "name": "compute_match",
+      "is_unconstrained": false,
+      "custom_attributes": [],
+      "abi": {
+        "parameters": [
+          {
+            "name": "job_req",
+            "type": {
+              "kind": "field"
+            },
+            "visibility": "private"
+          },
+          {
+            "name": "skills",
+            "type": {
+              "kind": "field"
+            },
+            "visibility": "private"
+          },
+          {
+            "name": "experience",
+            "type": {
+              "kind": "field"
+            },
+            "visibility": "private"
+          }
+        ],
+        "return_type": {
+          "abi_type": {
+            "kind": "field"
+          },
+          "visibility": "public"
+        },
+        "error_types": {}
+      },
+      "bytecode": "H4sIAAAAAAAA/9VXW27CMBDcvAokQJEKUo9hxw5x/uAo5OFj9mwlqld1nRQEWSNYCW0SO5PZ8dojAviJzfn3aa5jk0MYRmDywWQ2LTghFhuhey82dx/YWqA+CQoSmdwPfDnPEosERjSN3ICsjSXYXsquzDsu+InlVa0KJot6r7jihSraXAnRKanKqq5KVjEpOq6LSmiDFd+PxR0sloCfxQ0d/abypKz57ULNt2LbffRmeis29wEMI/CoC0UtGDOfhGcjDTKV/AzoNuucsF5fGs7h+kl/63fmQHsYUNedmLqv9c61cHEp13tBqKF9uPS4R3is8wfwes6fmpyhIChgP+A6fwb+nd8Wcarzp0DXqBm8hvNT1rwEP86/hMc7fwp+nH/lk/AK6J1/BXSbdQ3P7fy9hmugd/41PLfzZ6ZuauenXO93Qg3tw6XHPcLvwWL/ZbVNbAN/Y2BkZ/Jl22kpVNcJoetS1lLxNt+3J3YerLXMm+Kki7IuT7wp8lbvddPqSjZ9tCFdfTwi1H1DrHvs6If9HDr37hwcn5u8MDm13onouOaIn/nBZzMYRmpdZ84Y1h+PvBf8cx86+dLcS6a6GhlDzA+Tbb5Yx8LJOwuXUEuO+Fs/+KNrtbOut06dtt4HIg6Ih3sigWGEzhjOdfdMQM+Pu1yikW9hYM9srWeo5zfxWw4okBUAAA==",
+      "debug_symbols": "ldTRCoMgFAbgdznXXTRbWr3KGGFlIYiG2WBE7z6LBRGD8d/5e/jOzY8u1KlmHmptezdR9VjIuFYG7WxMC6X71TRKu6UpSB+oEjlPSNkunkS6JtRro6jK2fpM6IYChoIMBXcU5CjgKBAoKFBQwsXhVf/uWmSHKPhVMFhksLjDIocFh4WARQGLEhUshQXcOfv3wC8ihsZrY/RQn3+ieP2SXsvGqG/sZ9uepuE9HpPDj961qpu92jbts7j+Aw==",
+      "brillig_names": [
+        "directive_integer_quotient",
+        "directive_invert"
+      ],
+      "verification_key": "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\nPa5YgJ+q7saoanj0s7xh8Z1ucGk1m79H5/kH"
+    },
+    {
+      "name": "submit_resume",
+      "is_unconstrained": false,
+      "custom_attributes": [],
+      "abi": {
+        "parameters": [
+          {
+            "name": "name",
+            "type": {
+              "kind": "field"
+            },
+            "visibility": "private"
+          },
+          {
+            "name": "skills",
+            "type": {
+              "kind": "field"
+            },
+            "visibility": "private"
+          },
+          {
+            "name": "experience",
+            "type": {
+              "kind": "field"
+            },
+            "visibility": "private"
+          }
+        ],
+        "return_type": {
+          "abi_type": {
+            "kind": "field"
+          },
+          "visibility": "public"
+        },
+        "error_types": {}
+      },
+      "bytecode": "H4sIAAAAAAAA/62R3QqAMAhGW/VAOrXpXa/SaL3/I/S3wViX7YB8KHJAdMPLdJUbvsw515wEC3MKPiHhBt6iCrDERVFRVHavRElZg0ULYMiU8BCjA156ulxH11i54B849XM9N87Vjwr3fGz6dqdwApReEavkAQAA",
+      "debug_symbols": "XYxLCoAwDAXvkrUn8Coi0k9aAqEpsRWk9O5+cCFdzhveNPBoa9woBdlhXhqwOFNI0k2tT2CVmCluw3wYJWMZPww1uZ8tZ8bhn1Uc+qr4lF7X134B",
+      "brillig_names": [],
+      "verification_key": "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\nPa5YgJ+q7saoanj0s7xh8Z1ucGk1m79H5/kH"
+    },
+    {
+      "name": "public_dispatch",
+      "is_unconstrained": true,
+      "custom_attributes": [
+        "public"
+      ],
+      "abi": {
+        "parameters": [
+          {
+            "name": "selector",
+            "type": {
+              "kind": "field"
+            },
+            "visibility": "private"
+          }
+        ],
+        "return_type": null,
+        "error_types": {
+          "1752556835457866331": {
+            "error_kind": "string",
+            "string": "No public functions"
+          }
+        }
+      },
+      "bytecode": "JwAABAEqAAABBRhSVSgKJhpbPAABAA==",
+      "debug_symbols": "XYxLCoAwDAXvkrUn8Coi0k9aAqEpsRWk9O5+cCFdzhveNPBoa9woBdlhXhqwOFNI0k2tT2CVmCluw3wYJWMZPww1uZ8tZ8bhn1Uc+qr4lF7X134B",
+      "brillig_names": [
+        "public_dispatch"
+      ]
+    }
+  ],
+  "outputs": {
+    "globals": {},
+    "structs": {}
+  },
+  "file_map": {
+    "52": {
+      "path": "/home/emre/priva_test/src/main.nr",
+      "source": "/**\n * @file main.nr\n * @description Main contract implementation for the ZKP-enabled job application platform\n */\n\ncontract MVPBoard {\n    // Function for publishing a job posting\n    pub fn publish_job(title: Field, company: Field, requirements: Field) -> pub Field { \n        // Simple hash for job posting\n        title + company + requirements \n    }\n    \n    // Function for submitting a resume\n    pub fn submit_resume(name: Field, skills: Field, experience: Field) -> pub Field { \n        // Simple hash for resume\n        name + skills + experience \n    }\n    \n    // Function for computing a match score\n    pub fn compute_match(job_req: Field, skills: Field, experience: Field) -> pub Field {\n        // Simple match score calculation\n        ((job_req as u64 & skills as u64) as Field) + (experience / 10)\n    }\n}\n\n#[test]\nfn test_publish_job() {\n    let title = 1;\n    let company = 2;\n    let requirements = 3;\n    \n    let hash = MVPBoard::publish_job(title, company, requirements);\n    assert(hash == 6);\n}\n\n#[test]\nfn test_submit_resume() {\n    let name = 10;\n    let skills = 20;\n    let experience = 30;\n    \n    let hash = MVPBoard::submit_resume(name, skills, experience);\n    assert(hash == 60);\n}\n\n#[test]\nfn test_matching() {\n    let job_req = 7; // Binary: 111\n    let skills = 6;  // Binary: 110\n    let experience = 20;\n    \n    let score = MVPBoard::compute_match(job_req, skills, experience);\n    assert(score == 8); // (6 & 7) + (20/10) = 6 + 2 = 8\n}\n"
+    }
+  }
+}

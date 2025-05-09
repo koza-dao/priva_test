@@ -1,97 +1,124 @@
-# ZKP Job Platform - Aztec Network Implementation
+# MVPBoard - Aztec ZKP Job Platform (v0.86.0)
 
-This project implements a Zero-Knowledge Proof (ZKP) enabled job application platform on the Aztec Network. It allows for private job postings, private resume submissions, confidential job applications, and secure mutual approvals, all leveraging the privacy capabilities of zero-knowledge proofs.
+Bu proje, Aztec Network üzerinde gizlilik korumalı bir iş ilanı ve başvuru platformunu Zero-Knowledge Proof (ZKP) teknolojisi ile gerçekleştirir. Aztec v0.86.0 versiyonu için optimize edilmiştir.
 
-## Features
-
-- **Private Job Postings**: Employers can post jobs with requirements and qualifications that are kept confidential
-- **Private Resume Submissions**: Job seekers can submit their credentials without revealing them publicly
-- **Zero-Knowledge Job Applications**: Apply for jobs while keeping your information private
-- **Match Score Calculation**: Applications compute a match score using zero-knowledge proofs
-- **Mutual Approval**: Both employers and applicants can approve matches securely
-
-## Project Structure
-
-- `contracts/` - Aztec contracts, specifically the MVPBoard contract
-- `src/` - Noir circuits for the zero-knowledge proofs
-- `zkp-job-platform-aztec.ts` - TypeScript integration library for the frontend
-- `deploy-aztec.ts` - Deployment script for the Aztec contract
-- `index.html` - Simple demo frontend for testing
-
-## Prerequisites
-
-- Node.js 16 or higher
-- npm or yarn
-- Familiarity with Typescript and Aztec Network
-
-## Setup Instructions
-
-1. Clone this repository:
-   ```
-   git clone https://github.com/yourusername/zkp-job-platform-aztec.git
-   cd zkp-job-platform-aztec
-   ```
-
-2. Install dependencies:
-   ```
-   npm install
-   ```
-
-3. Create a `.env` file (based on `.env.example`) and add your private key (if you have one):
-   ```
-   PRIVATE_KEY=your_private_key_here
-   AZTEC_SERVER_URL=https://api.aztec.network/aztec-connect-testnet/falafel
-   ```
-
-4. Deploy the contract to Aztec testnet:
-   ```
-   npm run deploy
-   ```
-
-5. Open the demo frontend:
-   ```
-   npx serve .
-   ```
-   Then open http://localhost:5000 in your browser.
-
-## Using the Platform
-
-### For Employers
-
-1. Post a job with details and a secret code
-2. Receive a job commitment hash that can be shared
-3. Review and approve applications
-
-### For Job Seekers
-
-1. Submit your resume with skills and a secret code
-2. Receive a resume commitment hash
-3. Apply to jobs using the job commitment and your resume commitment
-4. If approved, you'll get an approval commitment
-
-## Development
-
-### Building the Project
+## Proje Yapısı
 
 ```
-npm run build
+mvp_project/
+├── src/                          # Kaynak kod
+│   └── main.nr                   # Ana Noir kontratı
+├── target/                       # Derleme çıktıları
+│   └── mvp_project-MVPBoard.json # Kontrat artifact'ı
+├── contracts/                    # TypeScript arayüzleri
+├── package.json                  # Bağımlılıklar
+├── zkp-job-platform-aztec.ts     # Aztec SDK entegrasyonu
+├── deploy-aztec.ts               # Deploy script'i
+└── Nargo.toml                    # Proje konfigürasyonu
 ```
 
-### Running Tests
+## Özellikler
 
+- **İş İlanı Yayınlama**: İş veren, pozisyon bilgilerini gizlilik korumalı şekilde yayınlar
+- **Özgeçmiş Gönderimi**: Adaylar, özgeçmişlerini gizli tutarak sisteme kaydeder
+- **Gizli Eşleştirme Algoritması**: İlan ve özgeçmiş arasındaki eşleşme skoru hesaplanır
+- **Gizli Veri Depolama**: Tüm veriler şifrelenmiş olarak zincirde saklanır
+
+## Teknolojiler
+
+- [Noir](https://noir-lang.org/): Aztec Network'ün resmi ZKP programlama dili
+- [Aztec Protocol v0.86.0](https://docs.aztec.network/): Gizlilik odaklı Layer 2 çözümü
+- [TypeScript](https://www.typescriptlang.org/): Tip güvenlikli JavaScript
+- [Node.js](https://nodejs.org/): JavaScript runtime
+
+## Kurulum
+
+### Gereksinimler
+
+- Node.js >= 18.x ve <= 20.17.x
+- Docker
+- Aztec CLI
+
+### Adımlar
+
+1. Aztec araçlarını yükleyin:
+
+```bash
+bash -i <(curl -s https://install.aztec.network)
+aztec-up v0.86.0
 ```
-npm test
+
+2. Projeyi klonlayın ve bağımlılıkları yükleyin:
+
+```bash
+git clone https://github.com/yourusername/mvp_project.git
+cd mvp_project
+npm install
 ```
 
-## How it Works
+3. Kontratı derleyin:
 
-The platform uses zero-knowledge proofs built with Noir and deployed to Aztec Network. Here's the basic flow:
+```bash
+aztec-nargo compile
+```
 
-1. Employers create job posts, which generate a commitment hash
-2. Job seekers create resume entries, also generating a commitment hash
-3. When applying, the system calculates a match score in zero-knowledge
-4. Both parties can approve matches without revealing private information
+4. Kontratı deploy edin:
 
-## License
+```bash
+npm run deploy
+```
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+## Kullanım
+
+### İş İlanı Yayınlama
+
+```typescript
+// Platform örneği oluştur
+const platform = await initializeZKPPlatformAztec({});
+
+// İş ilanı yayınla
+const result = await platform.publishJob(
+  123,  // title (Field olarak)
+  456,  // company (Field olarak)
+  789   // requirements (Field olarak)
+);
+
+console.log("İş ilanı hash:", result.jobHash);
+```
+
+### Özgeçmiş Gönderme
+
+```typescript
+// Özgeçmiş gönder
+const result = await platform.submitResume(
+  111,  // name (Field olarak)
+  222,  // skills (Field olarak)
+  5     // experience (yıl)
+);
+
+console.log("Özgeçmiş hash:", result.resumeHash);
+```
+
+### Eşleştirme Skoru Hesaplama
+
+```typescript
+// Eşleştirme skoru hesapla
+const result = await platform.computeMatch(
+  789,  // job requirements (Field olarak)
+  222,  // candidate skills (Field olarak)
+  5     // experience (yıl)
+);
+
+console.log("Eşleştirme skoru:", result.matchScore);
+```
+
+## Gizlilik Özellikleri
+
+- **Private Functions**: Aztec Network'ün `#[aztec(private)]` özelliği ile işlem verilerini koruma
+- **Şifrelenmiş Storage**: Veriler zincirde şifrelenmiş olarak saklanır
+- **Zero-Knowledge İspatları**: İşlemlerin geçerliliği ispat edilirken özel veriler açığa çıkmaz
+- **Seçici Şeffaflık**: Belirli taraflar için kısmi veri görünürlüğü sağlanabilir
+
+## Lisans
+
+MIT

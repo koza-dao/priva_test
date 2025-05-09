@@ -1,5 +1,5 @@
 /**
- * ZKP-Enabled Web3 Job Application Platform for Aztec Network
+ * ZKP-Enabled Web3 Job Application Platform for Aztec Network v0.86.0
  * Frontend Integration Library
  * 
  * This library provides methods to interact with the Aztec Network implementation
@@ -8,70 +8,91 @@
 
 // Import Aztec SDK
 import { 
-  createAztecSdk, 
-  AztecSdk, 
-  Fr, 
-  Note, 
-  AccountWallet 
-} from '@aztec/sdk';
-import { MVPBoard, JobPostNote, ResumeNote, ApplicationNote, ApprovalNote } from './contracts/MVPBoard';
+  createAztecSdk,
+  waitForSandbox,
+  getSandboxAccountsWallets,
+  AccountWallet,
+  AztecAddress,
+  Contract,
+  TxHash,
+  Fr
+} from '@aztec/aztec.js';
+import { createPXEClient } from '@aztec/aztec.js/pxe';
+import { ContractArtifact } from '@aztec/foundation/abi';
+import { ethers } from 'ethers';
+import * as dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
+
+// Load contract artifact
+const CONTRACT_JSON_PATH = './target/mvp_project-MVPBoard.json';
 
 interface ZKPJobPlatformConfig {
-  provider?: any;
+  pxeUrl?: string;
   privateKey?: string;
-  mvpBoardAddress?: string;
+  contractAddress?: string;
 }
 
 interface EventCallbacks {
-  onJobPublished?: (jobCommitment: string) => void;
-  onResumeSubmitted?: (resumeCommitment: string) => void;
-  onApplicationCreated?: (applicationCommitment: string, matchScore: number) => void;
-  onApprovalCreated?: (approvalCommitment: string) => void;
+  onJobPublished?: (jobHash: string) => void;
+  onResumeSubmitted?: (resumeHash: string) => void;
+  onMatchComputed?: (jobId: string, resumeId: string, score: number) => void;
 }
 
 class ZKPJobPlatformAztec {
-  private provider?: any;
+  private pxeUrl: string;
   private privateKey?: string;
-  private mvpBoardAddress?: string;
-  private sdk: AztecSdk | null = null;
+  private contractAddress?: string;
   private wallet: AccountWallet | null = null;
-  private mvpBoard: any | null = null;
+  private contract: Contract | null = null;
+  private contractArtifact: ContractArtifact;
   private eventSubscriptions: any[] = [];
 
   constructor(config: ZKPJobPlatformConfig) {
-    this.provider = config.provider;
+    this.pxeUrl = config.pxeUrl || 'http://localhost:8080';
     this.privateKey = config.privateKey;
-    this.mvpBoardAddress = config.mvpBoardAddress;
+    this.contractAddress = config.contractAddress;
+    
+    // Load contract artifact
+    try {
+      this.contractArtifact = JSON.parse(
+        fs.readFileSync(CONTRACT_JSON_PATH, 'utf-8')
+      );
+    } catch (error) {
+      console.error('Failed to load contract artifact:', error);
+      throw new Error('Contract artifact not found. Make sure to compile the contract first.');
+    }
   }
 
   /**
    * Initialize the Aztec SDK, wallet and contract
    */
   async initialize(): Promise<void> {
-    // Create and start the SDK
-    this.sdk = await createAztecSdk({
-      serverUrl: 'https://api.aztec.network/aztec-connect-testnet/falafel', // Use testnet
-      pollInterval: 1000,
-      memoryDb: true,
-      debug: 'bb:*',
-    });
-    await this.sdk.run();
-    console.log('Aztec SDK initialized');
-
+    // Create Aztec SDK
+    const pxe = createPXEClient(this.pxeUrl);
+    const { aztecNode } = await createAztecSdk({ pxe });
+    
     // Set up wallet
     if (this.privateKey) {
-      this.wallet = await this.sdk.createWalletFromPK(Fr.fromString(this.privateKey));
+      // Use provided private key
+      const provider = new ethers.providers.JsonRpcProvider();
+      const ethSigner = new ethers.Wallet(this.privateKey, provider);
+      // @ts-ignore
+      this.wallet = await pxe.createSchnorrAccount(ethSigner);
     } else {
-      this.wallet = await this.sdk.createWallet();
-      console.log('New wallet created. Private key:', this.wallet.getPrivateKey().toString());
+      // Use sandbox account
+      const accounts = await getSandboxAccountsWallets(aztecNode);
+      this.wallet = accounts[0];
     }
-    console.log('Wallet address:', this.wallet.getAddress().toString());
+    
+    console.log('Using account:', await this.wallet.getAddress().toString());
 
-    // Connect to contract
-    if (this.mvpBoardAddress) {
-      this.mvpBoard = await this.sdk.getContract(this.mvpBoardAddress);
-    } else {
-      console.warn('No contract address provided. Use deployContract() to deploy a new instance.');
+    // Connect to contract if address is provided
+    if (this.contractAddress) {
+      this.contract = await pxe.getContractInstance(
+        this.contractArtifact,
+        AztecAddress.fromString(this.contractAddress)
+      );
     }
   }
 
@@ -79,348 +100,139 @@ class ZKPJobPlatformAztec {
    * Deploy a new MVPBoard contract
    */
   async deployContract(): Promise<string> {
-    if (!this.sdk || !this.wallet) {
-      throw new Error('SDK and wallet must be initialized before deploying');
+    if (!this.wallet) {
+      throw new Error('Wallet not initialized. Call initialize() first');
     }
     
     console.log('Deploying MVPBoard contract...');
-    const deployTx = await MVPBoard.deploy(this.sdk).send();
-    await deployTx.wait();
     
-    this.mvpBoard = deployTx.contract;
-    this.mvpBoardAddress = this.mvpBoard.address.toString();
+    // Deploy the contract
+    const deployed = await this.wallet.deploy(this.contractArtifact).send().wait();
     
-    console.log('MVPBoard contract deployed at:', this.mvpBoardAddress);
-    return this.mvpBoardAddress;
+    // Store contract reference
+    this.contractAddress = deployed.contractAddress.toString();
+    this.contract = deployed.contract;
+    
+    console.log('Contract deployed at:', this.contractAddress);
+    return this.contractAddress;
   }
 
   /**
-   * Convert string to Field array (for input to Aztec)
-   */
-  stringToFieldArray(str: string, length: number = 32): Fr[] {
-    const result = new Array(length).fill(Fr.ZERO);
-    for (let i = 0; i < Math.min(str.length, length); i++) {
-      result[i] = new Fr(str.charCodeAt(i));
-    }
-    return result;
-  }
-
-  /**
-   * Convert Field array to string (for display)
-   */
-  fieldArrayToString(fieldArray: Fr[]): string {
-    return fieldArray
-      .map(field => String.fromCharCode(parseInt(field.toString())))
-      .join('')
-      .replace(/\0/g, '');
-  }
-
-  /************************
-   * JOB POSTING METHODS *
-   ************************/
-  
-  /**
-   * Create a job post structure for Aztec
-   */
-  createJobPost(
-    title: string, 
-    company: string, 
-    location: string, 
-    requirements: string[], 
-    salary: number, 
-    minLevel: number, 
-    secret: string
-  ): JobPostNote {
-    return new JobPostNote(
-      this.stringToFieldArray(title),
-      this.stringToFieldArray(company),
-      this.stringToFieldArray(location),
-      requirements.map(req => this.stringToFieldArray(req)).concat(
-        Array(10 - requirements.length).fill(Array(32).fill(Fr.ZERO))
-      ).slice(0, 10),
-      new Fr(salary),
-      new Fr(minLevel),
-      new Fr(secret)
-    );
-  }
-
-  /**
-   * Publish a job on Aztec
+   * Publish a job posting
    */
   async publishJob(
-    title: string, 
-    company: string, 
-    location: string, 
-    requirements: string[], 
-    salary: number, 
-    minLevel: number, 
-    secret: string
-  ): Promise<{txHash: string, jobCommitment: string}> {
-    if (!this.mvpBoard) {
+    title: number,
+    company: number,
+    requirements: number
+  ): Promise<{ txHash: string, jobHash: string }> {
+    if (!this.contract || !this.wallet) {
       throw new Error('Contract not initialized');
     }
 
-    // Create job post note
-    const jobPost = this.createJobPost(title, company, location, requirements, salary, minLevel, secret);
+    // Call publish_job function
+    const tx = await this.contract.methods.publish_job(
+      title,
+      company,
+      requirements
+    ).send().wait();
     
-    // Call contract method
-    const tx = await this.mvpBoard.methods
-      .publishJob(jobPost)
-      .send()
-      .wait();
+    // Get result from transaction receipt
+    const result = tx.returnValues[0].toString();
     
-    // Extract job commitment from logs
-    const event = tx.events.find((e: any) => e.name === 'JobPublished');
-    const jobCommitment = event.args[0];
-    
-    console.log('Job published successfully');
     return {
-      txHash: tx.hash,
-      jobCommitment: jobCommitment.toString()
+      txHash: tx.txHash.toString(),
+      jobHash: result
     };
   }
 
-  /***********************
-   * RESUME/CV METHODS *
-   ***********************/
-  
   /**
-   * Create a resume structure for Aztec
-   */
-  createResume(
-    name: string, 
-    skills: string[], 
-    experienceYears: number, 
-    secret: string
-  ): ResumeNote {
-    return new ResumeNote(
-      this.stringToFieldArray(name),
-      skills.map(skill => this.stringToFieldArray(skill)).concat(
-        Array(10 - skills.length).fill(Array(32).fill(Fr.ZERO))
-      ).slice(0, 10),
-      new Fr(experienceYears),
-      new Fr(secret)
-    );
-  }
-
-  /**
-   * Submit a resume on Aztec
+   * Submit a resume
    */
   async submitResume(
-    name: string, 
-    skills: string[], 
-    experienceYears: number, 
-    secret: string
-  ): Promise<{txHash: string, resumeCommitment: string}> {
-    if (!this.mvpBoard) {
+    name: number,
+    skills: number,
+    experience: number
+  ): Promise<{ txHash: string, resumeHash: string }> {
+    if (!this.contract || !this.wallet) {
       throw new Error('Contract not initialized');
     }
 
-    // Create resume note
-    const resume = this.createResume(name, skills, experienceYears, secret);
+    // Call submit_resume function
+    const tx = await this.contract.methods.submit_resume(
+      name,
+      skills,
+      experience
+    ).send().wait();
     
-    // Call contract method
-    const tx = await this.mvpBoard.methods
-      .submitResume(resume)
-      .send()
-      .wait();
+    // Get result from transaction receipt
+    const result = tx.returnValues[0].toString();
     
-    // Extract resume commitment from logs
-    const event = tx.events.find((e: any) => e.name === 'ResumeSubmitted');
-    const resumeCommitment = event.args[0];
-    
-    console.log('Resume submitted successfully');
     return {
-      txHash: tx.hash,
-      resumeCommitment: resumeCommitment.toString()
-    };
-  }
-
-  /*************************
-   * APPLICATION METHODS *
-   *************************/
-  
-  /**
-   * Apply to a job on Aztec
-   */
-  async applyToJob(
-    job: JobPostNote | any, // JobPostNote or job details object
-    resume: ResumeNote | any, // ResumeNote or resume details object
-    jobCommitment: string,
-    resumeCommitment: string,
-    applicantSecret: string
-  ): Promise<{txHash: string, applicationCommitment: string, matchScore: number}> {
-    if (!this.mvpBoard) {
-      throw new Error('Contract not initialized');
-    }
-
-    // Convert to JobPostNote if needed
-    let jobNote = job;
-    if (!(job instanceof JobPostNote)) {
-      jobNote = this.createJobPost(
-        job.title,
-        job.company,
-        job.location,
-        job.requirements,
-        job.salary,
-        job.minLevel,
-        applicantSecret // This would normally be jobSecret
-      );
-    }
-
-    // Convert to ResumeNote if needed
-    let resumeNote = resume;
-    if (!(resume instanceof ResumeNote)) {
-      resumeNote = this.createResume(
-        resume.name,
-        resume.skills,
-        resume.experienceYears,
-        applicantSecret // This would normally be resumeSecret
-      );
-    }
-
-    // Format arguments
-    const frJobCommitment = new Fr(jobCommitment);
-    const frResumeCommitment = new Fr(resumeCommitment);
-    const frApplicantSecret = new Fr(applicantSecret);
-    
-    // Call contract method
-    const tx = await this.mvpBoard.methods
-      .apply(jobNote, resumeNote, frJobCommitment, frResumeCommitment, frApplicantSecret)
-      .send()
-      .wait();
-    
-    // Extract application commitment and match score from logs
-    const event = tx.events.find((e: any) => e.name === 'ApplicationCreated');
-    const applicationCommitment = event.args[0];
-    const matchScore = parseInt(event.args[1].toString());
-    
-    console.log('Application submitted successfully');
-    console.log('Match score:', matchScore);
-    return {
-      txHash: tx.hash,
-      applicationCommitment: applicationCommitment.toString(),
-      matchScore
+      txHash: tx.txHash.toString(),
+      resumeHash: result
     };
   }
 
   /**
-   * Approve application (mutual agreement)
+   * Compute match score between job and resume
    */
-  async approve(
-    applicationCommitment: string, 
-    employerSecret: string, 
-    applicantSecret: string
-  ): Promise<{txHash: string, approvalCommitment: string}> {
-    if (!this.mvpBoard) {
+  async computeMatch(
+    jobRequirements: number,
+    candidateSkills: number,
+    experience: number
+  ): Promise<{ txHash: string, matchScore: number }> {
+    if (!this.contract || !this.wallet) {
       throw new Error('Contract not initialized');
     }
 
-    // Format arguments
-    const frApplicationCommitment = new Fr(applicationCommitment);
-    const frEmployerSecret = new Fr(employerSecret);
-    const frApplicantSecret = new Fr(applicantSecret);
+    // Call compute_match function
+    const tx = await this.contract.methods.compute_match(
+      jobRequirements,
+      candidateSkills,
+      experience
+    ).send().wait();
     
-    // Call contract method
-    const tx = await this.mvpBoard.methods
-      .approve(frApplicationCommitment, frEmployerSecret, frApplicantSecret)
-      .send()
-      .wait();
+    // Get result from transaction receipt
+    const result = Number(tx.returnValues[0].toString());
     
-    // Extract approval commitment from logs
-    const event = tx.events.find((e: any) => e.name === 'ApprovalCreated');
-    const approvalCommitment = event.args[0];
-    
-    console.log('Approval created successfully');
     return {
-      txHash: tx.hash,
-      approvalCommitment: approvalCommitment.toString()
+      txHash: tx.txHash.toString(),
+      matchScore: result
     };
   }
 
   /**
    * Subscribe to contract events
    */
-  subscribeToEvents(callbacks: EventCallbacks): void {
-    if (!this.sdk || !this.mvpBoard) {
-      throw new Error('SDK and contract must be initialized before subscribing to events');
+  async subscribeToEvents(callbacks: EventCallbacks): Promise<void> {
+    if (!this.contract) {
+      throw new Error('Contract not initialized');
     }
-
-    if (callbacks.onJobPublished) {
-      const jobSub = this.mvpBoard.events
-        .JobPublished
-        .subscribe((event: any) => {
-          const jobCommitment = event.args[0].toString();
-          callbacks.onJobPublished?.(jobCommitment);
-        });
-      this.eventSubscriptions.push(jobSub);
-    }
-
-    if (callbacks.onResumeSubmitted) {
-      const resumeSub = this.mvpBoard.events
-        .ResumeSubmitted
-        .subscribe((event: any) => {
-          const resumeCommitment = event.args[0].toString();
-          callbacks.onResumeSubmitted?.(resumeCommitment);
-        });
-      this.eventSubscriptions.push(resumeSub);
-    }
-
-    if (callbacks.onApplicationCreated) {
-      const appSub = this.mvpBoard.events
-        .ApplicationCreated
-        .subscribe((event: any) => {
-          const applicationCommitment = event.args[0].toString();
-          const matchScore = parseInt(event.args[1].toString());
-          callbacks.onApplicationCreated?.(applicationCommitment, matchScore);
-        });
-      this.eventSubscriptions.push(appSub);
-    }
-
-    if (callbacks.onApprovalCreated) {
-      const approvalSub = this.mvpBoard.events
-        .ApprovalCreated
-        .subscribe((event: any) => {
-          const approvalCommitment = event.args[0].toString();
-          callbacks.onApprovalCreated?.(approvalCommitment);
-        });
-      this.eventSubscriptions.push(approvalSub);
-    }
+    
+    // TODO: Implement event subscriptions for v0.86.0
+    console.log('Event subscriptions not yet implemented for v0.86.0');
   }
 
   /**
    * Unsubscribe from all events
    */
   unsubscribeFromEvents(): void {
-    for (const subscription of this.eventSubscriptions) {
-      subscription.unsubscribe();
-    }
-    
+    this.eventSubscriptions.forEach(subscription => {
+      if (subscription.unsubscribe) {
+        subscription.unsubscribe();
+      }
+    });
     this.eventSubscriptions = [];
-    console.log('Unsubscribed from all events');
   }
 }
 
-async function initializeZKPPlatformAztec(config: ZKPJobPlatformConfig): Promise<ZKPJobPlatformAztec> {
-  try {
-    const platform = new ZKPJobPlatformAztec(config);
-    await platform.initialize();
-    
-    if (!config.mvpBoardAddress) {
-      await platform.deployContract();
-    }
-    
-    return platform;
-  } catch (error) {
-    console.error('Error initializing Aztec platform:', error);
-    throw error;
-  }
+/**
+ * Initialize a new ZKP Job Platform for Aztec
+ */
+async function initializeZKPPlatformAztec(config: ZKPJobPlatformConfig = {}): Promise<ZKPJobPlatformAztec> {
+  const platform = new ZKPJobPlatformAztec(config);
+  await platform.initialize();
+  return platform;
 }
 
-// Export the class and initialization function
-export {
-  ZKPJobPlatformAztec,
-  initializeZKPPlatformAztec,
-  ZKPJobPlatformConfig,
-  EventCallbacks
-}; 
+export { ZKPJobPlatformAztec, initializeZKPPlatformAztec }; 

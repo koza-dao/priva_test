@@ -1,51 +1,74 @@
 /**
  * @file deploy-aztec.ts
- * @description Deployment script for the ZKP job platform on Aztec Network
+ * @description Simplified deployment script for the ZKP job platform on Aztec Network v0.86.0
  */
-import { ZKPJobPlatformAztec, initializeZKPPlatformAztec } from './zkp-job-platform-aztec';
-import fs from 'fs';
-import path from 'path';
 
-// Configuration
-const PRIVATE_KEY = process.env.PRIVATE_KEY || '';
+// Import the createPXEClient and waitForPXE functions from @aztec/aztec.js
+import { createPXEClient, waitForPXE } from '@aztec/aztec.js';
+
+// Import the getDeployedTestAccountsWallets function from @aztec/accounts/testing
+import { getDeployedTestAccountsWallets } from '@aztec/accounts/testing';
+
+// Import the fs and path modules
+import * as fs from 'fs';
+import * as path from 'path';
+
+// Define the path to the contract artifact and where to save the address
+const CONTRACT_JSON_PATH = './target/mvp_project-MVPBoard.json';
 const SAVE_ADDRESS_TO = 'aztec-contract-address.json';
 
 async function main() {
   try {
-    console.log('Initializing ZKP Job Platform for Aztec...');
+    console.log('Initializing deployment...');
     
-    // Initialize the platform with private key if available
-    const platform = await initializeZKPPlatformAztec({
-      privateKey: PRIVATE_KEY
-    });
+    // Create a PXE client that connects to the local sandbox or a remote node
+    const pxe = createPXEClient(process.env.AZTEC_NODE_URL || 'http://localhost:8080');
+    
+    // Wait for the PXE to be ready
+    console.log('Waiting for PXE...');
+    await waitForPXE(pxe);
+    console.log('PXE is ready');
+    
+    // Get the test wallets
+    console.log('Getting test accounts...');
+    const wallets = await getDeployedTestAccountsWallets(pxe);
+    
+    // Use the first wallet as the deployer
+    const deployer = wallets[0];
+    console.log(`Using wallet at address: ${deployer.getAddress().toString()}`);
+    
+    // Load the contract artifact
+    console.log('Loading contract artifact...');
+    const artifact = JSON.parse(fs.readFileSync(CONTRACT_JSON_PATH, 'utf-8'));
     
     // Deploy the contract
-    console.log('Deploying the MVPBoard contract...');
-    const contractAddress = await platform.deployContract();
-    console.log('Contract deployed successfully at:', contractAddress);
+    console.log('Deploying contract...');
+    const tx = await deployer.deploy(artifact).send();
+    const receipt = await tx.wait();
+    
+    // Get the contract address from the receipt
+    const contractAddress = receipt.contractAddress.toString();
+    console.log(`Contract deployed to: ${contractAddress}`);
     
     // Save the contract address to a file
-    const addressData = {
+    const deployData = {
       address: contractAddress,
-      network: 'aztec-testnet',
-      deploymentTime: new Date().toISOString()
+      network: process.env.AZTEC_NODE_URL ? 'testnet' : 'sandbox',
+      timestamp: new Date().toISOString()
     };
     
     fs.writeFileSync(
-      path.resolve(__dirname, SAVE_ADDRESS_TO),
-      JSON.stringify(addressData, null, 2)
+      SAVE_ADDRESS_TO,
+      JSON.stringify(deployData, null, 2)
     );
     
-    console.log(`Contract address saved to ${SAVE_ADDRESS_TO}`);
-    console.log('Deployment completed successfully');
+    console.log(`Deployment information saved to ${SAVE_ADDRESS_TO}`);
     
-    // Exit the process
-    process.exit(0);
   } catch (error) {
-    console.error('Error during deployment:', error);
+    console.error('Deployment failed:', error);
     process.exit(1);
   }
 }
 
-// Run the main function
-main(); 
+// Run the deployment script
+main().catch(console.error); 
