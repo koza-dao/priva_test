@@ -1,124 +1,72 @@
-# MVPBoard - Aztec ZKP Job Platform (v0.86.0)
+# PRIVA - Anonymous & Verifiable Web3 Work Identity Platform
 
-Bu proje, Aztec Network üzerinde gizlilik korumalı bir iş ilanı ve başvuru platformunu Zero-Knowledge Proof (ZKP) teknolojisi ile gerçekleştirir. Aztec v0.86.0 versiyonu için optimize edilmiştir.
+## 🌐 Overview
+PRIVA is a zk-powered, privacy-first hiring platform for Web3 developers who want to prove their real contributions and professional reputation without revealing personal identity. By combining Zero-Knowledge Proofs (ZKPs), Decentralized Identifiers (DIDs), and verifiable on-chain activity, PRIVA creates trustful yet anonymous bridges between developers and hiring organizations.
 
-## Proje Yapısı
+## 🚩 Problem
+Web3 developers increasingly avoid job applications due to forced identity exposure and unverifiable employer credibility. According to ConsenSys 2023 Developer Report:
 
-```
-mvp_project/
-├── src/                          # Kaynak kod
-│   └── main.nr                   # Ana Noir kontratı
-├── target/                       # Derleme çıktıları
-│   └── mvp_project-MVPBoard.json # Kontrat artifact'ı
-├── contracts/                    # TypeScript arayüzleri
-├── package.json                  # Bağımlılıklar
-├── zkp-job-platform-aztec.ts     # Aztec SDK entegrasyonu
-├── deploy-aztec.ts               # Deploy script'i
-└── Nargo.toml                    # Proje konfigürasyonu
-```
+- **62% of Web3 developers** hesitate to apply for jobs that require revealing their real identity.
+- **70% of CVs** include misleading or unverifiable information.
+- **86% of candidates** research a company via employee reviews before applying.
 
-## Özellikler
+Current job platforms (e.g., LinkedIn, AngelList) fail to ensure privacy and on-chain credibility.
 
-- **İş İlanı Yayınlama**: İş veren, pozisyon bilgilerini gizlilik korumalı şekilde yayınlar
-- **Özgeçmiş Gönderimi**: Adaylar, özgeçmişlerini gizli tutarak sisteme kaydeder
-- **Gizli Eşleştirme Algoritması**: İlan ve özgeçmiş arasındaki eşleşme skoru hesaplanır
-- **Gizli Veri Depolama**: Tüm veriler şifrelenmiş olarak zincirde saklanır
+## 🔍 Solution
+PRIVA empowers developers to:
 
-## Teknolojiler
+- Prove credentials via zkJWT, zkEmail, or zkCertificates without exposing personal data
+- Aggregate on-chain developer signals (testnet activity, DAOs, GitHub commits)
+- Receive and give **anonymous company feedback** using privacy-preserving zkProofs
 
-- [Noir](https://noir-lang.org/): Aztec Network'ün resmi ZKP programlama dili
-- [Aztec Protocol v0.86.0](https://docs.aztec.network/): Gizlilik odaklı Layer 2 çözümü
-- [TypeScript](https://www.typescriptlang.org/): Tip güvenlikli JavaScript
-- [Node.js](https://nodejs.org/): JavaScript runtime
+### For Employers:
+- Validate applicant skills through verifiable credentials and on-chain proofs
+- Access pseudonymous but reputation-backed talent pool
+- Reduce hiring time via instant credential verification
 
-## Kurulum
+## 🔧 Tech Stack
+- **Smart Contracts**: Noir zkProofs + Aztec compatibility (zkEmail, zkJWT circuits)
+- **Backend**: Node.js + Express + Supabase (data orchestration, session zk validation)
+- **Frontend**: React + TailwindCSS + Wagmi + Viem (zk-enabled UX)
+- **Wallet Auth**: Ethereum (EOA), zkLogin compatible
 
-### Gereksinimler
+## 🧪 Key Features
+- 🔐 **Anonymous Application**: Prove reputation, hide identity  
+- ✅ **Verifiable Credentials**: On-chain proof of skill, off-chain zkCerts  
+- 💬 **Anonymous Company Reviews**: zk-proof of employment + anonymous feedback  
+- ⛓ **Testnet Indexing**: Developer's on-chain activity fetcher  
 
-- Node.js >= 18.x ve <= 20.17.x
-- Docker
-- Aztec CLI
+## 📊 Impact Metrics
+- **30% faster hiring** (via DID & VC pilot programs in EU)  
+- **46% less bias** when using anonymous applications (NBER)  
+- **+30% engagement** from passive candidates when anonymity is preserved (GoGig)  
 
-### Adımlar
+## 📚 Future Roadmap
+Our long-term vision is to evolve PRIVA beyond hiring, into a decentralized professional network for developers — enabling authentic, privacy-respecting collaboration, reputation building, and opportunity discovery.
 
-1. Aztec araçlarını yükleyin:
+- [ ] **Modular zkResume Builder**: Allow users to compose zero-knowledge based resumes with verifiable modules.
+- [ ] **Reputation Layer**: On-chain developer scoring system based on activity, endorsements, and feedback.
+- [ ] **DAO/Org Network Layer**: Enabling devs to explore and join DAOs, guilds or collectives based on privacy-preserving reputation.
+- [ ] **zkSocial Graph**: A cryptographic layer to map meaningful, verifiable connections between users without disclosing identities.
+- [ ] **Private Messaging**: End-to-end encrypted messaging with zk identity verification.
+- [ ] **Public Credential Explorer**: Developers can optionally publish verifiable skills/experience sets for community recognition.
 
-```bash
-bash -i <(curl -s https://install.aztec.network)
-aztec-up v0.86.0
-```
+## 📄 License
+MIT License
 
-2. Projeyi klonlayın ve bağımlılıkları yükleyin:
+## ✍️ Contributors
+- Tugay Sönmez - Research  
+- Ebubekir Rüzgar - Frontend
+- Emre Gülünk, Fatmanur Özçetin - Backend
+- Ömer Aksu - Design
 
-```bash
-git clone https://github.com/yourusername/mvp_project.git
-cd mvp_project
-npm install
-```
+## 📎 References
+- ConsenSys Web3 Developer Survey 2023  
+- NBER Anonymous Hiring Study  
+- Dock.io VC Tech Blog  
+- Select Software Reviews (Hiring with VCs)  
+- ETHGlobal zkCV hackathon submissions  
 
-3. Kontratı derleyin:
+---
 
-```bash
-aztec-nargo compile
-```
-
-4. Kontratı deploy edin:
-
-```bash
-npm run deploy
-```
-
-## Kullanım
-
-### İş İlanı Yayınlama
-
-```typescript
-// Platform örneği oluştur
-const platform = await initializeZKPPlatformAztec({});
-
-// İş ilanı yayınla
-const result = await platform.publishJob(
-  123,  // title (Field olarak)
-  456,  // company (Field olarak)
-  789   // requirements (Field olarak)
-);
-
-console.log("İş ilanı hash:", result.jobHash);
-```
-
-### Özgeçmiş Gönderme
-
-```typescript
-// Özgeçmiş gönder
-const result = await platform.submitResume(
-  111,  // name (Field olarak)
-  222,  // skills (Field olarak)
-  5     // experience (yıl)
-);
-
-console.log("Özgeçmiş hash:", result.resumeHash);
-```
-
-### Eşleştirme Skoru Hesaplama
-
-```typescript
-// Eşleştirme skoru hesapla
-const result = await platform.computeMatch(
-  789,  // job requirements (Field olarak)
-  222,  // candidate skills (Field olarak)
-  5     // experience (yıl)
-);
-
-console.log("Eşleştirme skoru:", result.matchScore);
-```
-
-## Gizlilik Özellikleri
-
-- **Private Functions**: Aztec Network'ün `#[aztec(private)]` özelliği ile işlem verilerini koruma
-- **Şifrelenmiş Storage**: Veriler zincirde şifrelenmiş olarak saklanır
-- **Zero-Knowledge İspatları**: İşlemlerin geçerliliği ispat edilirken özel veriler açığa çıkmaz
-- **Seçici Şeffaflık**: Belirli taraflar için kısmi veri görünürlüğü sağlanabilir
-
-## Lisans
-
-MIT
+*PRIVA is built during NoirHack 2025 to demonstrate how privacy and verifiability can co-exist in Web3 hiring.*
