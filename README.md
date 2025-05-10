@@ -26,9 +26,10 @@ PRIVA empowers developers to:
 
 ## 🔧 Tech Stack
 - **Smart Contracts**: Noir zkProofs + Aztec compatibility (zkEmail, zkJWT circuits)
-- **Backend**: Node.js + Express + Supabase (data orchestration, session zk validation)
-- **Frontend**: React + TailwindCSS + Wagmi + Viem (zk-enabled UX)
-- **Wallet Auth**: Ethereum (EOA), zkLogin compatible
+- **Frontend**: NextJS + TailwindCSS
+- **Wallet Auth**: Ethereum (EOA), zkLogin & World compatible
+
+## frontend repo - https://github.com/koza-dao/frontend
 
 ## 🧪 Key Features
 - 🔐 **Anonymous Application**: Prove reputation, hide identity  
@@ -66,6 +67,8 @@ MIT License
 - Dock.io VC Tech Blog  
 - Select Software Reviews (Hiring with VCs)  
 - ETHGlobal zkCV hackathon submissions  
+
+
 
 ---
 
