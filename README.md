@@ -56,9 +56,9 @@ Our long-term vision is to evolve PRIVA beyond hiring, into a decentralized prof
 MIT License
 
 ## ✍️ Contributors
-- Tugay Sönmez - Research  
+- Tugay Sönmez - Research
 - Ebubekir Rüzgar - Frontend
-- Emre Gülünk, Fatmanur Özçetin - Backend
+- Emre Gülünk, Fatmanur Özçetin - Contract
 - Ömer Aksu - Design
 
 ## 📎 References
